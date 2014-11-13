@@ -13,4 +13,10 @@ class AWSTagCheck(NagiosCheck):
         :param options: An optional list with options (e.g. can contain credentials)
         :return: void
         """
-        super(AWSTagCheck, self).__init__(warning,critical, options)
+        super(AWSTagCheck, self).__init__(warning, critical, options)
+
+    def run(self):
+        pass
+
+    def print_usage(self):
+        pass

@@ -3,7 +3,7 @@ __author__ = 'pvbouwel'
 import unittest
 from awschecks.nagioscheck import NagiosExitCodes, NagiosCheck
 from testfixtures import LogCapture
-from awschecks.awscheckscli import CheckAwsTagsCli
+from awschecks.nagioscheckscli import NagiosCheckCli
 import logging
 
 
@@ -11,7 +11,7 @@ class NagiosCheckTests(unittest.TestCase):
     def setUp(self):
         class TrivialNagiosCheckImplementation(NagiosCheck):
             def __init__(self):
-                super(TrivialNagiosCheckImplementation,self).__init__()
+                super(TrivialNagiosCheckImplementation, self).__init__()
 
             def run(self):
                 pass
@@ -65,15 +65,15 @@ class NagiosCheckTests(unittest.TestCase):
     def test_an_implementation_of_nagioscheck_must_implement_the_run_method(self):
         class BadNagiosCheckImplementation(NagiosCheck):
             def __init__(self):
-                pass
+                super(BadNagiosCheckImplementation, self).__init__()
         with self.assertRaises(TypeError) as error:
-            bnci = BadNagiosCheckImplementation()
+            bad_nagios_check_implementation = BadNagiosCheckImplementation()
 
         self.assertTrue(error.exception.message.startswith("Can't instantiate abstract class"))
 
     def test_unknown_arguments_format2_should_be_handled_as_options_for_the_check(self):
         test_arguments = ["application_title.py","--region", "ALL", "--warning", "1", "--critical", "2",
                           "--check", "awstagscheck", "--extra-option", "test", "--extra-option2=test2" ]
-        catc = CheckAwsTagsCli(test_arguments)
+        nagios_cli = NagiosCheckCli(test_arguments)
         expected_options = {"extra-option": "test", "extra-option2": "test2"}
-        self.assertEqual(expected_options, catc.options)
+        self.assertEqual(expected_options, nagios_cli.options)

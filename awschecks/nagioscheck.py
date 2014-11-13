@@ -147,8 +147,8 @@ class NagiosCheck:
     @abc.abstractmethod
     def print_usage(self):
         """
-        This method will print the print_usage information for the check. It should state how the following parameters should
-        be passed:
+        This method will print the print_usage information for the check. It should state how the following parameters
+         should be passed:
           - warning
           - critical
           - options (show whether options are mandatory or optional)

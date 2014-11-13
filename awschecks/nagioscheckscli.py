@@ -8,15 +8,20 @@ from boto import ec2
 from nagioscheck import NagiosExitCodes
 
 
-class CheckAwsTagsCli:
+class NagiosCheckCli:
     args = None
+    aws_access_key_id = None
+    aws_secret_access_key = None
+    check = None
+    critical = ""
     log = logging.getLogger(__name__)
+    options = None
     region = "eu-west-1"
     tags = None
     title = None
+    unknowns = None
     version = "0.0.1"
-    aws_access_key_id = None
-    aws_secret_access_key = None
+    warning = ""
 
     def __init__(self, cli_arguments):
         self.title = cli_arguments[0]
@@ -32,10 +37,11 @@ class CheckAwsTagsCli:
                             help='the region in which the resources need to be checked. "ALL" can be used to search'
                                  ' all regions.  E.g. us-east-1')
         parser.add_argument('--check', metavar='CHECK', help='The check that needs to be executed.  If no additional '
-                                                             'information is provided print_usage of the check is shown.  '
-                                                             'This parameter is mandatory')
+                                                             'information is provided print_usage of the check is '
+                                                             'shown.  This parameter is mandatory')
         parser.add_argument('--warning', metavar='WARNING', help='A string providing the warning threshold (mandatory)')
-        parser.add_argument('--critical', metavar='CRITICAL', help='A string providing the warning threshold (mandatory)')
+        parser.add_argument('--critical', metavar='CRITICAL', help='A string providing the warning threshold '
+                                                                   '(mandatory)')
         parser.add_argument('--verbose', '-v', action='count', help='enable verbose output (-v[v]* for more), should '
                                                                     'not be used in nagios configuration.')
         parser.add_argument('--aws_access_key_id', '-i', help='The AWS access key id to be used to authenticate.')
@@ -76,12 +82,14 @@ class CheckAwsTagsCli:
         self.options = {}
         unknowns = self.normalize_cli_arguments(self.unknowns)
         if len(unknowns) % 2 == 1:
-            raise(argparse.ArgumentError("Unknown arguments need to come in pairs."))
+            raise(argparse.ArgumentError("Unknown arguments need to come in pairs.", "Make sure the passed arguments "
+                                                                                     "are valid"))
         else:
             nr_elements = len(unknowns)/2
-            for index in range(0,nr_elements):
+            for index in range(0, nr_elements):
                 if not unknowns[2*index].startswith("--"):
-                    raise(argparse.ArgumentError("Unknown arguments need to come in pairs like: '--key value'"))
+                    raise(argparse.ArgumentError("Unknown arguments need to come in pairs like: '--key value'",
+                                                 "Make sure the passed arguments are valid."))
                 else:
                     key = unknowns[2*index][2:]
                     value = unknowns[2*index + 1]
@@ -165,6 +173,6 @@ class CheckAwsTagsCli:
 
 
 if __name__ == '__main__':
-    check = CheckAwsTagsCli(sys.argv).get_check()
+    check = NagiosCheckCli(sys.argv).get_check()
     check.run()
     check.report()
