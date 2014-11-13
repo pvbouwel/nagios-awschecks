@@ -6,10 +6,12 @@ import argparse
 import logging
 from boto import ec2
 from nagioscheck import NagiosExitCodes
+import wrapt
 
 
 class NagiosCheckCli:
     args = None
+    arguments_processed = False
     aws_access_key_id = None
     aws_secret_access_key = None
     check = None
@@ -22,13 +24,14 @@ class NagiosCheckCli:
     unknowns = None
     version = "0.0.1"
     warning = ""
+    checks = ["awstagscheck"]
+
 
     def __init__(self, cli_arguments):
         self.title = cli_arguments[0]
         real_arguments = cli_arguments[1:]
         self.parse_arguments(real_arguments)
         self.configure_logging()
-        self.process_arguments()
 
     def parse_arguments(self, arguments):
         parser = argparse.ArgumentParser(description='Check whether tags are set on AWS resources.  '
@@ -67,12 +70,16 @@ class NagiosCheckCli:
         self.log.debug("Logging initialized with verbosity " + str(verbosity))
 
     def process_arguments(self):
+        if self.arguments_processed:
+            return
+
         self.log.debug("Processing arguments: " + str(self.args))
         self.process_credentials()
         self.process_region()
         self.process_check()
         self.process_thresholds()
         self.process_unknowns()
+        self.arguments_processed = True
 
     def process_unknowns(self):
         """
@@ -116,10 +123,9 @@ class NagiosCheckCli:
 
     def process_check(self):
         if self.args.check is None:
-            self.log.error("The check parameter is mandatory!")
+            self.log.fatal("The check parameter is mandatory!")
         else:
-            checks = ["awstagscheck"]
-            if self.args.check in checks:
+            if self.args.check in self.checks:
                 self.check = self.args.check
             else:
                 raise(ValueError("Invalid checkname passed as an argument, check configuration."))

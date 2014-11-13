@@ -75,5 +75,6 @@ class NagiosCheckTests(unittest.TestCase):
         test_arguments = ["application_title.py","--region", "ALL", "--warning", "1", "--critical", "2",
                           "--check", "awstagscheck", "--extra-option", "test", "--extra-option2=test2" ]
         nagios_cli = NagiosCheckCli(test_arguments)
+        nagios_cli.process_arguments()
         expected_options = {"extra-option": "test", "extra-option2": "test2"}
         self.assertEqual(expected_options, nagios_cli.options)

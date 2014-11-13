@@ -1,4 +1,5 @@
 boto
+moto
 mock
 nose
 testfixtures
