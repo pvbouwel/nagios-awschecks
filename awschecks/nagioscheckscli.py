@@ -177,6 +177,15 @@ class NagiosCheckCli:
     def get_check(self):
         return None
 
+    def execute(self):
+        """
+        Execute the NagiosCheckCli command this means execute the Nagios check that was passed as argument
+        :return:
+        """
+        self.process_arguments()
+        check = self.get_check()
+        check.run()
+        check.report()
 
 if __name__ == '__main__':
     check = NagiosCheckCli(sys.argv).get_check()
