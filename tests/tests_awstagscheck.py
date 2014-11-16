@@ -15,8 +15,6 @@ class TaggingTests(unittest.TestCase):
         volume = conn.create_volume(80, "us-east-1a")
         conn.create_tags([volume.id], {"name": "unknown"})
 
-        self.assertTrue(len(conn.get_all_volumes()) == 0)
-
         test_arguments = ["application_title.py","--region", "ALL", "--warning", "warningtag", "--critical",
                           "criticaltag", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
