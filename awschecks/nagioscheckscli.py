@@ -6,7 +6,6 @@ import argparse
 import logging
 from boto import ec2
 from nagioscheck import NagiosExitCodes
-import wrapt
 
 
 class NagiosCheckCli:
