@@ -113,12 +113,13 @@ class NagiosCheckCli:
         return normalized_arguments
 
     def process_thresholds(self):
-        if self.args.warning is None or self.args.critical is None:
-            self.log.error("The warning and critical parameters are mandatory. Showing check print_usage information:")
-            self.get_check().print_usage()
-        else:
-            self.warning = self.args.warning
-            self.critical = self.args.critical
+        """
+        Just sets the thresholds, the check itself is responsible for checking the values.  It can be None since this
+        means the default value might be used.
+        :return:
+        """
+        self.warning = self.args.warning
+        self.critical = self.args.critical
 
     def process_check(self):
         if self.args.check is None:
