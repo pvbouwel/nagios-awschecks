@@ -4,7 +4,7 @@ __doc__ = 'https://github.com/pvbouwel/nagios-awschecks'
 import sys
 import argparse
 import logging
-from boto import ec2
+from boto import ec2, boto
 from nagioscheck import NagiosExitCodes
 
 
@@ -23,7 +23,7 @@ class NagiosCheckCli:
     unknowns = None
     version = "0.0.1"
     warning = ""
-    checks = ["awstagscheck"]
+    checks = {"awstagscheck":"awschecks.AWSTagCheck"}
 
 
     def __init__(self, cli_arguments):
@@ -133,8 +133,8 @@ class NagiosCheckCli:
         if self.args.check is None:
             self.log.fatal("The check parameter is mandatory!")
         else:
-            if self.args.check in self.checks:
-                self.check = self.args.check
+            if self.args.check.lower() in self.checks.keys():
+                self.check = self.checks[self.args.check.lower()]
             else:
                 raise(ValueError("Invalid checkname passed as an argument, check configuration."))
 
@@ -190,8 +190,29 @@ class NagiosCheckCli:
                 self.aws_access_key_id = self.args.aws_access_key_id
                 self.aws_secret_access_key = self.args.aws_secret_access_key
 
+    def get_connection(self):
+        if self.args.aws_access_key_id and self.args.aws_secret_access_key:
+            return boto.connect_ec2('the_key', 'the_secret')
+        else:
+            return boto.connect_ec2()
+
+
+
     def get_check(self):
-        return None
+        """
+        Get the check on a reflection-like way.  The check will be pointed to by a full module path + the class name:
+        Similar to http://stackoverflow.com/questions/452969/does-python-have-an-equivalent-to-java-class-forname
+        E.g. awschecks.AWSTagCheck
+        :return:
+        """
+        parts = self.check.split('.')
+        module = ".".join(parts[:-1])
+        m = __import__(module)
+        for comp in parts[1:]:
+            m = getattr(m, comp)
+        check_class = m
+        return check_class(connection=self.get_connection(), warning=self.warning, critical=self.critical,
+                           options=self.options)
 
     def execute(self):
         """

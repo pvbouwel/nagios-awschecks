@@ -24,19 +24,27 @@ class NagiosCheckThresholdError(Exception):
         return repr(self.value)
 
 
+class NagiosCheckOptionError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class NagiosCheck:
     __metaclass__ = abc.ABCMeta
     logging.basicConfig(level=logging.INFO, format='%(message)s')
     log = logging.getLogger(__name__)
 
-    def __init__(self, warning='', critical='', options={}):
+    def __init__(self, connection=None, warning='', critical='', options={}):
         """
         NagiosCheck constructor takes 3 keyword arguments
 
-
-        warning  -- a NagiosCheck-specific string identifying warning thresholds
-        critical -- a NagiosCheck-specific string identifying warning thresholds
-        options  -- a dict with options specific to this check
+        :param connection -- a boto.ec2.connection.EC2Connection
+        :param warning  -- a NagiosCheck-specific string identifying warning thresholds
+        :param critical -- a NagiosCheck-specific string identifying warning thresholds
+        :param options  -- a dict with options specific to this check
         """
         self.warning = warning
         self.critical = critical
@@ -47,6 +55,7 @@ class NagiosCheck:
         self.criticals = []
         self.performance_data = {}
         self.state = NagiosExitCodes.OK
+        self.connection = connection
 
     def update_state(self):
         """
