@@ -16,6 +16,14 @@ class NagiosExitCodes:
         pass
 
 
+class NagiosCheckThresholdError(Exception):
+    def __init__(self, value):
+        self.value = value
+
+    def __str__(self):
+        return repr(self.value)
+
+
 class NagiosCheck:
     __metaclass__ = abc.ABCMeta
     logging.basicConfig(level=logging.INFO, format='%(message)s')
