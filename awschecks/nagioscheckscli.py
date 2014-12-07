@@ -77,12 +77,13 @@ class NagiosCheckCli:
         self.process_region()
         self.process_check()
         self.process_thresholds()
-        self.process_unknowns()
+        self.process_unknown_cli_arguments()
         self.arguments_processed = True
 
-    def process_unknowns(self):
+    def process_unknown_cli_arguments(self):
         """
         Unknown arguments are considered options for the launched check,  So parse them and put them in the options dict
+        These should come in pairs like --optionkey optionvalue
         :return:
         """
         self.options = {}
@@ -103,6 +104,13 @@ class NagiosCheckCli:
 
     @staticmethod
     def normalize_cli_arguments(arguments):
+        """
+        This method takes a list of arguments if there are arguments in this list that are of the form key=value they
+        will be splitted into key and value.  This will allow to process arguments in a homogeneous way i.e.:
+        '--key=value' will be treated similar as '--key value'
+        :param arguments:
+        :return:
+        """
         normalized_arguments = []
         for argument in arguments:
             if '=' in argument:
@@ -130,7 +138,19 @@ class NagiosCheckCli:
             else:
                 raise(ValueError("Invalid checkname passed as an argument, check configuration."))
 
+    def process_region(self):
+        try:
+            self.region = self.get_validated_region(self.args.region)
+        except ValueError as e:
+            self.log.error(str(e))
+            sys.exit(NagiosExitCodes.UNKNOWN)
+
     def get_validated_region(self, region_name):
+        """
+        Verifies whether a region is valid.
+        :param region_name:
+        :return:
+        """
         if not region_name:
             self.log.debug("No region passed as argument -> using default.")
         else:
@@ -146,14 +166,10 @@ class NagiosCheckCli:
         else:
             raise(ValueError("Invalid region passed as an argument, check configuration."))
 
-    def process_region(self):
-        try:
-            self.region = self.get_validated_region(self.args.region)
-        except ValueError as e:
-            self.log.error(str(e))
-            sys.exit(NagiosExitCodes.UNKNOWN)
-
     def get_all_region_names(self):
+        """ Get a list with all region names
+        :return: list with all region names
+        """
         if self.aws_access_key_id:
             regions = ec2.regions(aws_access_key_id=self.aws_access_key_id,
                                   aws_secret_access_key=self.aws_secret_access_key)
