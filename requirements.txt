@@ -1,2 +1,2 @@
-boto
-wrapt
+boto==2.34.0
+wrapt==1.9.0
