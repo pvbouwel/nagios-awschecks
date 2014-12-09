@@ -9,6 +9,7 @@ import boto
 from awschecks.awstagscheck import AWSTagCheck
 from awschecks.nagioscheck import NagiosCheckOptionError
 
+
 class TaggingTests(unittest.TestCase):
     @mock_ec2
     def test_a_volume_without_a_mandatory_critical_tag_must_report_critical_state(self):
@@ -99,3 +100,33 @@ class TaggingTests(unittest.TestCase):
         check = AWSTagCheck(None, warning, critical, options)
 
         self.assertRaises(NagiosCheckOptionError,check.run)
+
+    @mock_ec2
+    def test_an_instance_without_a_mandatory_critical_tag_must_report_critical_state(self):
+        conn = boto.connect_ec2('key', 'secret')
+        reservation = conn.run_instances('ami-748e2903')
+        instance = reservation.instances[0]
+        conn.create_tags([instance.id], {"name": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "ALL", "--critical",
+                          "criticaltag", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
+        conn.terminate_instances(instance.id)
+
+    @mock_ec2
+    def test_an_instance_with_a_mandatory_critical_tag_must_report_OK_state(self):
+        conn = boto.connect_ec2('key', 'secret')
+        reservation = conn.run_instances('ami-748e2903')
+        instance = reservation.instances[0]
+        conn.create_tags([instance.id], {"name": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "ALL", "--critical",
+                          "name", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.OK)
+        conn.terminate_instances(instance.id)
