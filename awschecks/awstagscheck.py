@@ -39,7 +39,7 @@ class AWSTagCheck(NagiosCheck):
                 self.check_tags(volume.tags, volume.id, "Volume")
 
         if 'snapshot' in self.resources_to_check:
-            all_snapshots = self.connection.get_all_snapshots()
+            all_snapshots = self.connection.get_all_snapshots(owner='self')
             for snapshot in all_snapshots:
                 self.check_tags(snapshot.tags, snapshot.id, "Snapshot")
 
