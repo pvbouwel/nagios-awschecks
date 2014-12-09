@@ -57,6 +57,19 @@ class NagiosCheck:
         self.state = NagiosExitCodes.OK
         self.connection = connection
 
+    def __add__(self, other):
+        result = DummyNagiosCheck()
+        result.unknowns.extend(self.unknowns)
+        result.unknowns.extend(other.unknowns)
+        result.warnings.extend(self.warnings)
+        result.warnings.extend(other.warnings)
+        result.criticals.extend(self.criticals)
+        result.criticals.extend(other.criticals)
+        result.OKs.extend(self.OKs)
+        result.OKs.extend(other.OKs)
+        result.performance_data = dict(self.performance_data.items() + other.performance_data.items())
+        return result
+
     def update_state(self):
         """
         This will set the state of the NagiosCheck.  When there are indicators for being critical the state will be
@@ -171,3 +184,11 @@ class NagiosCheck:
           - options (show whether options are mandatory or optional)
         :return:
         """
+
+
+class DummyNagiosCheck(NagiosCheck):
+    def run(self):
+        pass
+
+    def print_usage(self):
+        pass
