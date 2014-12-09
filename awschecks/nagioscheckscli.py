@@ -18,7 +18,7 @@ class NagiosCheckCli:
     log = logging.getLogger(__name__)
     options = None
     parser = None
-    region = "eu-west-1"
+    region = ["eu-west-1"]
     tags = None
     title = None
     unknowns = None
@@ -69,6 +69,7 @@ class NagiosCheckCli:
 
         logging.basicConfig(level=log_level, format=log_format)
         logging.getLogger('boto').setLevel(logging.CRITICAL)
+        self.log.setLevel(log_level)
         self.log.debug("Logging initialized with verbosity " + str(verbosity))
 
     def process_arguments(self):
@@ -185,7 +186,16 @@ class NagiosCheckCli:
         else:
             regions = ec2.regions()
 
-        return [region.name for region in regions]
+        all_regions = []
+        for region in regions:
+            if region.name in ["cn-north-1", "us-gov-west-1"]:
+                self.log.warning("Ignoring " + region.name + " since not public to the world yet.")
+                self.log.info("You can test " + region.name + " by explicitly specify the region to the regions "
+                                                              "argument.")
+            else:
+                all_regions.append(region.name)
+
+        return all_regions
 
     def process_credentials(self):
         self.log.debug("Check credentials")
@@ -199,13 +209,13 @@ class NagiosCheckCli:
                 self.aws_access_key_id = self.args.aws_access_key_id
                 self.aws_secret_access_key = self.args.aws_secret_access_key
 
-    def get_connection(self):
+    def get_connection(self,region):
         if self.args.aws_access_key_id and self.args.aws_secret_access_key:
-            return boto.connect_ec2('the_key', 'the_secret')
+            return ec2.connect_to_region(region, aws_access_key_id=self.args.aws_access_key_id, aws_secret_access_key=self.args.aws_secret_access_key)
         else:
-            return boto.connect_ec2()
+            return ec2.connect_to_region(region)
 
-    def get_check(self):
+    def get_check(self, region):
         """
         Get the check on a reflection-like way.  The check will be pointed to by a full module path + the class name:
         Similar to http://stackoverflow.com/questions/452969/does-python-have-an-equivalent-to-java-class-forname
@@ -218,7 +228,7 @@ class NagiosCheckCli:
         for comp in parts[1:]:
             m = getattr(m, comp)
         check_class = m
-        return check_class(connection=self.get_connection(), warning=self.warning, critical=self.critical,
+        return check_class(connection=self.get_connection(region), warning=self.warning, critical=self.critical,
                            options=self.options)
 
     def execute(self):
@@ -227,13 +237,21 @@ class NagiosCheckCli:
         :return:
         """
         self.process_arguments()
-        check = self.get_check()
+        check = self.get_check('us-east-1')
         check.run()
         check.report()
 
 if __name__ == '__main__':
     cli_instance = NagiosCheckCli(sys.argv)
     cli_instance.process_arguments()
-    check = cli_instance.get_check()
-    check.run()
-    check.report()
+    aggregated_check = None
+    for region_name in cli_instance.region:
+        cli_instance.log.debug("Checking region " + region_name)
+        check = cli_instance.get_check(region_name)
+        check.run()
+        if aggregated_check is None:
+            aggregated_check = check
+        else:
+            aggregated_check += check
+
+    aggregated_check.report()

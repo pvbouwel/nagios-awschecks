@@ -46,6 +46,14 @@ In order to run the tests make sure you have all the 'Development' and 'Regular 
 Either on your system or in a virtual_env (if the latter be sure to activate it).  Next go to the root of the source 
 directory and launch `nosetests`
 
+Regions parameter
+=================
+A nagios-awscheck takes a region as parameter.  If 'ALL' is passed as value the check will verify all regions that are 
+publicly available.  Beware however that at the moment of writing the following regions were accessible upon request (
+and thus not considered publicly available):
+* cn-north-1
+* us-gov-west-1
+
 Contribute
 ==========
 I am open to contributions.  You can fork, alter and create a Pull request.  There are multiple ways to contribute:
