@@ -38,6 +38,19 @@ class AWSTagCheck(NagiosCheck):
             for volume in all_volumes:
                 self.check_tags(volume.tags, volume.id, "Volume")
 
+        if 'snapshot' in self.resources_to_check:
+            all_snapshots = self.connection.get_all_snapshots()
+            for snapshot in all_snapshots:
+                self.check_tags(snapshot.tags, snapshot.id, "Snapshot")
+
+        if 'instance' in self.resources_to_check:
+            #Currently get_only_instances is used to return all instances.  In future boto releases this might change.
+            #get_all_instances currently returns reservations but in future might return instances
+            # More info at: http://boto.readthedocs.org/en/latest/ref/ec2.html#module-boto.ec2.connection
+            all_instances = self.connection.get_only_instances()
+            for instance in all_instances:
+                self.check_tags(instance.tags, instance.id, "Instance")
+
     def check_tags(self, present_tags, resource_id, resource_type):
         """
         Verifies whether the tags present on a resource are good enough.  It sets the check results (warnings, criticals
