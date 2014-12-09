@@ -17,13 +17,14 @@ class NagiosCheckCli:
     critical = ""
     log = logging.getLogger(__name__)
     options = None
+    parser = None
     region = "eu-west-1"
     tags = None
     title = None
     unknowns = None
     version = "0.0.1"
     warning = ""
-    checks = {"awstagscheck":"awschecks.AWSTagCheck"}
+    supported_checks = {"awstagscheck":"awschecks.AWSTagCheck"}
 
 
     def __init__(self, cli_arguments):
@@ -48,7 +49,9 @@ class NagiosCheckCli:
                                                                     'not be used in nagios configuration.')
         parser.add_argument('--aws_access_key_id', '-i', help='The AWS access key id to be used to authenticate.')
         parser.add_argument('--aws_secret_access_key', '-k', help='The AWS access key to be used to authenticate.')
+
         self.args, self.unknowns = parser.parse_known_args(arguments)
+        self.parser = parser
 
     def configure_logging(self):
         verbosity = self.args.verbose
@@ -75,7 +78,12 @@ class NagiosCheckCli:
         self.log.debug("Processing arguments: " + str(self.args))
         self.process_credentials()
         self.process_region()
-        self.process_check()
+        try:
+            self.process_check()
+        except(ValueError):
+            self.log.error("Currently only " + str(self.supported_checks.keys()) + " are supported as checks.")
+            sys.exit(NagiosExitCodes.UNKNOWN)
+
         self.process_thresholds()
         self.process_unknown_cli_arguments()
         self.arguments_processed = True
@@ -132,11 +140,12 @@ class NagiosCheckCli:
     def process_check(self):
         if self.args.check is None:
             self.log.fatal("The check parameter is mandatory!")
+            raise(ValueError("Invalid check name passed as an argument, check configuration."))
         else:
-            if self.args.check.lower() in self.checks.keys():
-                self.check = self.checks[self.args.check.lower()]
+            if self.args.check.lower() in self.supported_checks.keys():
+                self.check = self.supported_checks[self.args.check.lower()]
             else:
-                raise(ValueError("Invalid checkname passed as an argument, check configuration."))
+                raise(ValueError("Invalid check name passed as an argument, check configuration."))
 
     def process_region(self):
         try:
@@ -196,8 +205,6 @@ class NagiosCheckCli:
         else:
             return boto.connect_ec2()
 
-
-
     def get_check(self):
         """
         Get the check on a reflection-like way.  The check will be pointed to by a full module path + the class name:
@@ -225,6 +232,8 @@ class NagiosCheckCli:
         check.report()
 
 if __name__ == '__main__':
-    check = NagiosCheckCli(sys.argv).get_check()
+    cli_instance = NagiosCheckCli(sys.argv)
+    cli_instance.process_arguments()
+    check = cli_instance.get_check()
     check.run()
     check.report()
