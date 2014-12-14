@@ -31,17 +31,18 @@ class AWSTagCheck(NagiosCheck):
 
         self.process_passed_thresholds()
         self.check_options()
+        region_name = self.connection.region.name
 
         #If volumes are to be checked
         if 'volume' in self.resources_to_check:
             all_volumes = self.connection.get_all_volumes()
             for volume in all_volumes:
-                self.check_tags(volume.tags, volume.id, "Volume")
+                self.check_tags(volume.tags, volume.id, "Volume", region_name)
 
         if 'snapshot' in self.resources_to_check:
             all_snapshots = self.connection.get_all_snapshots(owner='self')
             for snapshot in all_snapshots:
-                self.check_tags(snapshot.tags, snapshot.id, "Snapshot")
+                self.check_tags(snapshot.tags, snapshot.id, "Snapshot", region_name)
 
         if 'instance' in self.resources_to_check:
             #Currently get_only_instances is used to return all instances.  In future boto releases this might change.
@@ -49,9 +50,9 @@ class AWSTagCheck(NagiosCheck):
             # More info at: http://boto.readthedocs.org/en/latest/ref/ec2.html#module-boto.ec2.connection
             all_instances = self.connection.get_only_instances()
             for instance in all_instances:
-                self.check_tags(instance.tags, instance.id, "Instance")
+                self.check_tags(instance.tags, instance.id, "Instance", region_name)
 
-    def check_tags(self, present_tags, resource_id, resource_type):
+    def check_tags(self, present_tags, resource_id, resource_type, region):
         """
         Verifies whether the tags present on a resource are good enough.  It sets the check results (warnings, criticals
         and OKs).
@@ -64,13 +65,14 @@ class AWSTagCheck(NagiosCheck):
         resource_ok = True
         for critical_tag in self.critical_tags:
             if not critical_tag in present_tags:
-                self.criticals.append("CRITICAL: " + resource_type + " " + resource_id + " is missing tag " +
-                                      critical_tag)
+                self.criticals.append("CRITICAL: " + resource_type + " " + resource_id + "(" + region + ") is missing "
+                                      "tag " + critical_tag)
                 resource_ok = False
 
         for warning_tag in self.warning_tags:
             if not warning_tag in present_tags:
-                self.warnings.append("WARNING: " + resource_type + " " + resource_id + " is missing tag " + warning_tag)
+                self.warnings.append("WARNING: " + resource_type + " " + resource_id + "(" + region + ") is missing "
+                                     "tag " + warning_tag)
                 resource_ok = False
 
         if resource_ok:
