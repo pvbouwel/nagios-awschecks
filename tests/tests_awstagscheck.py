@@ -6,6 +6,7 @@ __author__ = 'pvbouwel'
 import unittest
 from moto import mock_ec2
 import boto
+from boto import ec2
 from awschecks.awstagscheck import AWSTagCheck
 from awschecks.nagioscheck import NagiosCheckOptionError
 
@@ -21,6 +22,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
         volume.delete()
@@ -35,6 +37,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.WARNING)
         volume.delete()
@@ -49,6 +52,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.OK)
         volume.delete()
@@ -63,6 +67,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--resource", "ALL", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.WARNING)
         volume.delete()
@@ -82,6 +87,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--resource", "instance", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.OK)
         volume.delete()
@@ -112,6 +118,7 @@ class TaggingTests(unittest.TestCase):
                           "criticaltag", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
         conn.terminate_instances(instance.id)
@@ -127,6 +134,81 @@ class TaggingTests(unittest.TestCase):
                           "name", "--check", "awstagscheck"]
         nagios_cli = NagiosCheckCli(test_arguments)
         with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
             nagios_cli.execute()
         self.assertEqual(exit_context.exception.code, NagiosExitCodes.OK)
         conn.terminate_instances(instance.id)
+
+    @mock_ec2
+    def test_an_instance_with_missing_mandatory_critical_tag_must_report_CRITICAL_state_eu_region(self):
+        conn_eu = ec2.connect_to_region('eu-west-1')
+        reservation_eu = conn_eu.run_instances('ami-748e2903')
+        instance_eu = reservation_eu.instances[0]
+        conn_eu.create_tags([instance_eu.id], {"Name": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "eu-west-1", "--critical",
+                          "name", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
+        conn_eu.terminate_instances(instance_eu.id)
+
+    @mock_ec2
+    def test_an_instance_with_missing_mandatory_critical_tag_must_report_CRITICAL_state_us_region(self):
+        conn_us = ec2.connect_to_region('us-west-1')
+        reservation_us = conn_us.run_instances('ami-748e2903')
+        instance_us = reservation_us.instances[0]
+        conn_us.create_tags([instance_us.id], {"Name": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "us-west-1", "--critical",
+                          "name", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
+        conn_us.terminate_instances(instance_us.id)
+
+    @mock_ec2
+    def test_an_instance_with_missing_mandatory_critical_tag_must_report_CRITICAL_state_multi_region_1(self):
+        conn_us = ec2.connect_to_region('us-east-1')
+        reservation_us = conn_us.run_instances('ami-748e2903')
+        instance_us = reservation_us.instances[0]
+        conn_us.create_tags([instance_us.id], {"name": "unknown"})
+        conn_eu = ec2.connect_to_region('eu-west-1')
+        reservation_eu = conn_eu.run_instances('ami-748e2903')
+        instance_eu = reservation_eu.instances[0]
+        conn_eu.create_tags([instance_eu.id], {"name2": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "ALL", "--critical",
+                          "name", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
+        conn_us.terminate_instances(instance_us.id)
+        conn_eu.terminate_instances(instance_eu.id)
+
+    @mock_ec2
+    def test_an_instance_with_missing_mandatory_critical_tag_must_report_CRITICAL_state_multi_region_1(self):
+        conn_us = ec2.connect_to_region('us-east-1')
+        reservation_us = conn_us.run_instances('ami-748e2903')
+        instance_us = reservation_us.instances[0]
+        conn_us.create_tags([instance_us.id], {"name2": "unknown"})
+        conn_eu = ec2.connect_to_region('eu-west-1')
+        reservation_eu = conn_eu.run_instances('ami-748e2903')
+        instance_eu = reservation_eu.instances[0]
+        conn_eu.create_tags([instance_eu.id], {"name": "unknown"})
+
+        test_arguments = ["application_title.py","--region", "ALL", "--critical",
+                          "name", "--check", "awstagscheck"]
+        nagios_cli = NagiosCheckCli(test_arguments)
+        with self.assertRaises(SystemExit) as exit_context:
+            nagios_cli.process_arguments()
+            nagios_cli.execute()
+        self.assertEqual(exit_context.exception.code, NagiosExitCodes.CRITICAL)
+        conn_us.terminate_instances(instance_us.id)
+        conn_eu.terminate_instances(instance_eu.id)

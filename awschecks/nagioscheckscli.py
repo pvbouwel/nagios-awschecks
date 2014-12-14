@@ -232,26 +232,24 @@ class NagiosCheckCli:
                            options=self.options)
 
     def execute(self):
-        """
-        Execute the NagiosCheckCli command this means execute the Nagios check that was passed as argument
-        :return:
-        """
-        self.process_arguments()
-        check = self.get_check('us-east-1')
-        check.run()
-        check.report()
+        """Execute the check for each requested region"""
+        aggregated_check = None
+        for region_name in self.region:
+            self.log.debug("Checking region " + region_name)
+            check = self.get_check(region_name)
+            check.run()
+            if aggregated_check is None:
+                aggregated_check = check
+            else:
+                aggregated_check += check
 
-if __name__ == '__main__':
+        aggregated_check.report()
+
+
+def main():
     cli_instance = NagiosCheckCli(sys.argv)
     cli_instance.process_arguments()
-    aggregated_check = None
-    for region_name in cli_instance.region:
-        cli_instance.log.debug("Checking region " + region_name)
-        check = cli_instance.get_check(region_name)
-        check.run()
-        if aggregated_check is None:
-            aggregated_check = check
-        else:
-            aggregated_check += check
+    cli_instance.execute()
 
-    aggregated_check.report()
+if __name__ == '__main__':
+    main()
