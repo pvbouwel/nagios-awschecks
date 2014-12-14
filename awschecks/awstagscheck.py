@@ -144,7 +144,7 @@ class AWSTagCheck(NagiosCheck):
 
     def print_usage(self):
         usage_info = "-- Usage information for AWSTagCheck --\n"
-        usage_info += "This check is initiaded with --check=awstagscheck and will report missing tags\n"
+        usage_info += "This check is initiated with --check=awstagscheck and will report missing tags\n"
         usage_info += "--- arguments --- \n\n"
         usage_info += "warning is a list containing comma-separated tags that will result in a warning when missing.\n"
         usage_info += "critical is a list containing comma-separated tags that will result in a critical when missing."\
