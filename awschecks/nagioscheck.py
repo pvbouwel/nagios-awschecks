@@ -3,7 +3,7 @@ import sys
 import logging
 import abc
 
-__all__ = ('NagiosExitCodes', 'NagiosCheck')
+__all__ = ('NagiosExitCodes', 'NagiosCheckThresholdError', 'NagiosCheckOptionError', 'NagiosCheck', 'DummyNagiosCheck')
 
 
 class NagiosExitCodes:
