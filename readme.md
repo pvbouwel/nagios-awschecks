@@ -1,7 +1,9 @@
-# BETA-Warning
+# Warning
 
-This project is pushed to github but as you might expect by looking at the version number it is in an early stage.  This
-means it is still subject to change and likely to contain some bugs.
+This project is not actively maintained. The last update was just to avoid security issues.
+Since this project was based on boto2 it likely won't see active development in the future.
+Also note that it is Python 2 only so given that Python 2 is on its deprecation path this project is not recommended for
+new projects.
 
 # Description
 
