@@ -19,7 +19,7 @@ cryptography==2.7
 dicttoxml==1.7.4
 docker==4.0.1
 docutils==0.14
-ecdsa==0.13.2
+ecdsa==0.13.3
 enum34==1.1.6
 Flask==1.0.3
 funcsigs==1.0.2
